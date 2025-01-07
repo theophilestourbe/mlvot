@@ -8,6 +8,7 @@ class KalmanFilter():
         self.std_acc = std_acc
         self.x_std_meas = x_std_meas
         self.y_std_meas = y_std_meas
+        self.counter = 0 # counter of updates
 
         self.id = np.identity(4)
 
@@ -66,9 +67,20 @@ class KalmanFilter():
 
         return x_k, P_k
     
+    def predict_steps(self, n):
+        u = np.expand_dims(self.u, 0).T
+        xk = self.xk
+        for _ in range(n):
+            tmp = self.mat_a @ xk
+            tmp2 = self.mat_b @ u
+            xk = tmp + tmp2
+        return xk
+
+    
     def update(self, z_k, x_k, P_k):
         Sk = self.mat_h @ P_k @ self.mat_h.T + self.mat_r
         Kk = P_k @ self.mat_h.T @ np.linalg.inv(Sk)
 
         self.xk = x_k + Kk @ (z_k - (self.mat_h @ x_k))
         self.mat_P = (self.id - (Kk @ self.mat_h)) @ P_k
+        self.counter += 1
